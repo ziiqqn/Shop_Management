@@ -439,9 +439,9 @@ docker run -d -p 8000:8000 --env-file backend/.env shop-management
 
 ## 📧 联系方式
 
-- 作者：你的名字
-- 邮箱：your.email@example.com
-- GitHub：[@你的用户名](https://github.com/你的用户名)
+- 作者：Henry Lee
+- 邮箱：qunkkr@outlook.com
+- GitHub：[@ziiqqn](https://github.com/ziiqqn)
 
 ---
 
