@@ -5,7 +5,7 @@
  * - 统一错误提示
  */
 
-const BASE_URL = "";
+const BASE_URL = "https://shopmanagement-production-bd53.up.railway.app/";
 
 const api = axios.create({
     baseURL: BASE_URL,

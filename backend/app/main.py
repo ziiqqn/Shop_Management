@@ -1,9 +1,6 @@
 from contextlib import asynccontextmanager
-from pathlib import Path
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 
 from app.routers import auth, shop, tenant, contract, rent, receipt, bill, employee
 from app.scheduler.monthly_receipt import start_scheduler, shutdown_scheduler
@@ -16,16 +13,22 @@ async def lifespan(app: FastAPI):
     shutdown_scheduler()
 
 
-app = FastAPI(title="商铺信息管理系统 API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(
+    title="商铺信息管理系统 API",
+    version="1.0.0",
+    lifespan=lifespan
+)
 
+# 前后端分离，必须开放 CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],       # 生产环境可换成具体前端域名
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ===== 1. 先注册所有 API 路由 =====
+# 注册所有业务路由
 app.include_router(auth.router)
 app.include_router(shop.router)
 app.include_router(tenant.router)
@@ -36,19 +39,12 @@ app.include_router(bill.router)
 app.include_router(employee.router)
 
 
+@app.get("/")
+def root():
+    """后端根路径，仅用于健康检查"""
+    return {"message": "商铺信息管理系统 API 运行中", "docs": "/docs"}
+
+
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
-
-
-# ===== 2. 最后挂载前端静态资源 =====
-# 项目根目录下的 frontend/
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-FRONTEND_DIR = BASE_DIR / "frontend"
-
-if FRONTEND_DIR.exists():
-    app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")
-else:
-    @app.get("/")
-    def root():
-        return {"message": "前端目录未找到，请检查 frontend/ 是否存在"}
