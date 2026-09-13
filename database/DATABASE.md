@@ -227,4 +227,3 @@ SELECT id, shop_number, is_rented, current_tenant_id FROM shop;
 |---|---|---|
 |v1\.0|2026\-09|初始正式版本，包含11张核心业务数据表、完整表结构、基础测试数据、业务关联关系|
 
-> （注：部分内容可能由 AI 生成）
