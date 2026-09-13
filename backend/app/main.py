@@ -22,7 +22,10 @@ app = FastAPI(
 # 前后端分离，必须开放 CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://impartial-tenderness-production-5c31.up.railway.app"],       # 生产环境可换成具体前端域名
+    allow_origins=["https://impartial-tenderness-production-5c31.up.railway.app",
+                   "http://localhost:5500",
+                   "http://127.0.0.1:5500"
+    ],       # 生产环境可换成具体前端域名
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
