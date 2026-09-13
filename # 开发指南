@@ -1,0 +1,302 @@
+# Python 版商铺信息管理系统 —— 开发指南
+
+## 一、外部库作用说明
+
+| 库名 | 版本 | 作用 | 在本项目中的用途 |
+|------|------|------|------------------|
+| **fastapi** | 0.141.1 | 现代高性能 Web 框架，基于 Python 类型注解自动生成 API 文档 | 构建所有 RESTful API 接口，处理路由、请求、响应 |
+| **uvicorn[standard]** | 0.52.4 | ASGI 服务器，用于运行 FastAPI 应用 | 启动后端服务，监听端口（如 8000） |
+| **sqlalchemy** | 2.0.52 | Python 最主流的 ORM 框架 | 定义数据库模型类，执行 CRUD 操作，管理事务 |
+| **pymysql** | 1.2.0 | 纯 Python 的 MySQL 驱动 | SQLAlchemy 连接 MySQL 的底层驱动，替代 MySQLdb |
+| **pydantic** | 2.13.5 | 数据验证与序列化库 | 定义请求体/响应体的数据模型，自动校验参数合法性 |
+| **python-jose[cryptography]** | 3.5.0 | JWT 编解码库，附带加密算法支持 | 生成和验证登录 token，实现无状态认证 |
+| **passlib[bcrypt]** | 1.7.4 | 密码哈希库，支持多种算法 | 对员工和商户密码进行 bcrypt 加密存储 |
+| **python-multipart** | 0.0.32 | 解析 multipart/form-data 请求体 | FastAPI 处理文件上传或表单提交时需要 |
+| **apscheduler** | 3.11.3 | 高级 Python 定时任务调度器 | 每月1号自动生成收款单和账单 |
+
+> **简单记忆**：FastAPI 是骨架，Uvicorn 是发动机，SQLAlchemy + PyMySQL 是数据通道，Pydantic 是安检员，JWT + Passlib 是门锁和保险箱，APScheduler 是闹钟。
+
+---
+
+## 二、项目整体目录结构
+
+```
+商铺管理系统-Python版/
+│
+├── backend/                          # 后端（PyCharm 开发）
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py                   # FastAPI 入口，注册路由
+│   │   ├── config.py                 # 配置（DB、JWT 密钥）
+│   │   ├── database.py               # SQLAlchemy 引擎 + Session
+│   │   ├── constants.py              # 角色常量 + 内存哈希表
+│   │   │
+│   │   ├── models/                   # ORM 模型（映射数据库表）
+│   │   │   ├── __init__.py
+│   │   │   ├── shop.py
+│   │   │   ├── tenant.py
+│   │   │   ├── contract.py
+│   │   │   ├── rent.py
+│   │   │   ├── receipt.py
+│   │   │   ├── bill.py
+│   │   │   ├── employee.py
+│   │   │   ├── merchant.py
+│   │   │   └── history.py
+│   │   │
+│   │   ├── schemas/                  # Pydantic 请求/响应模型
+│   │   │   ├── __init__.py
+│   │   │   ├── auth.py
+│   │   │   ├── shop.py
+│   │   │   ├── tenant.py
+│   │   │   ├── contract.py
+│   │   │   ├── rent.py
+│   │   │   ├── receipt.py
+│   │   │   └── bill.py
+│   │   │
+│   │   ├── routers/                  # 路由（按模块拆分）
+│   │   │   ├── __init__.py
+│   │   │   ├── auth.py               # 员工/商户/老板登录注册
+│   │   │   ├── shop.py
+│   │   │   ├── tenant.py
+│   │   │   ├── contract.py
+│   │   │   ├── rent.py
+│   │   │   ├── receipt.py
+│   │   │   ├── bill.py
+│   │   │   └── merchant.py
+│   │   │
+│   │   ├── services/                 # 业务逻辑（可选拆分）
+│   │   │   ├── __init__.py
+│   │   │   ├── auth_service.py
+│   │   │   ├── contract_service.py
+│   │   │   ├── rent_service.py
+│   │   │   └── receipt_service.py
+│   │   │
+│   │   ├── utils/
+│   │   │   ├── __init__.py
+│   │   │   ├── security.py           # 哈希 + JWT
+│   │   │   └── deps.py               # 依赖注入（获取当前用户）
+│   │   │
+│   │   └── scheduler/                # 定时任务
+│   │       └── monthly_receipt.py
+│   │
+│   ├── requirements.txt              # 依赖清单
+│   ├── .env                          # 环境变量（数据库密码等）
+│   └── run.py                        # 启动脚本
+│
+├── frontend/                         # 前端（VSCode 开发）
+│   ├── index.html                    # 登录页
+│   ├── pages/
+│   │   ├── register.html             # 商户注册
+│   │   ├── employee.html             # 员工工作台（招商/财务/营运/收银）
+│   │   ├── merchant.html             # 商户工作台
+│   │   └── boss.html                 # 老板工作台
+│   ├── static/
+│   │   ├── css/
+│   │   │   ├── common.css
+│   │   │   └── login.css
+│   │   └── js/
+│   │       ├── api.js                # axios 封装 + 拦截器
+│   │       ├── auth.js
+│   │       ├── employee.js
+│   │       ├── merchant.js
+│   │       └── boss.js
+│   └── README.md
+│
+└── database/                         # 数据库（DataGrip 开发）
+    ├── init.sql                      # 建表 + 初始数据
+    └── README.md                     # 说明文档
+```
+
+---
+
+## 三、开发顺序（推荐 6 个阶段）
+
+### 阶段 1：数据库先行（DataGrip）
+**目标**：把数据地基打好，后续开发才有依据。
+
+1. 打开 DataGrip，连接 MySQL 8.0。
+2. 创建数据库：`CREATE DATABASE shop_db CHARACTER SET utf8mb4;`
+3. 编写 `init.sql`，包含：
+   - 11 张表（shop、tenant、contract、rent、receipt、bill、employee、merchant_account、shop_history_tenant、mall_layout、boss_config）
+   - 外键约束
+   - 生成列 `unpaid_amount`
+   - 初始数据（15 个商铺、4 个员工、1 个布局配置）
+4. 执行脚本，验证表和初始数据。
+
+> **完成标志**：DataGrip 中能看到所有表和预置数据。
+
+---
+
+### 阶段 2：后端骨架搭建（PyCharm）
+**目标**：让 FastAPI 能跑起来，数据库能连通。
+
+1. 创建 PyCharm 项目 `backend`。
+2. 安装依赖：
+   ```bash
+   pip install fastapi==0.141.1 uvicorn[standard]==0.52.4 \
+       sqlalchemy==2.0.52 pymysql==1.2.0 pydantic==2.13.5 \
+       python-jose[cryptography]==3.5.0 passlib[bcrypt]==1.7.4 \
+       python-multipart==0.0.32 apscheduler==3.11.3
+   ```
+3. 编写基础文件：
+   - `config.py`：数据库连接参数、JWT 密钥
+   - `database.py`：创建 engine、SessionLocal、Base
+   - `constants.py`：角色常量、`SESSION_TABLE` 哈希表
+4. 编写 `models/` 下的 ORM 模型（先写 `shop.py` 和 `employee.py` 测试）。
+5. 编写 `main.py`：
+   ```python
+   from fastapi import FastAPI
+   app = FastAPI()
+   @app.get("/")
+   def root(): return {"message": "OK"}
+   ```
+6. 启动：`python run.py`，访问 `http://localhost:8000/docs` 应看到 Swagger 文档。
+
+> **完成标志**：FastAPI 启动成功，Swagger 文档可访问。
+
+---
+
+### 阶段 3：认证与权限（后端核心）
+**目标**：实现登录、token 生成、角色校验。
+
+1. 在 `utils/security.py` 中实现：
+   - `hash_password` / `verify_password`
+   - `create_token` / `decode_token`
+2. 在 `utils/deps.py` 中实现：
+   - `get_current_user`：从 Header 中解析 token
+   - `require_role(*roles)`：角色校验
+3. 在 `routers/auth.py` 中实现三个登录接口：
+   - `/api/auth/employee/login`
+   - `/api/auth/merchant/login`
+   - `/api/auth/boss/login`
+4. 用 Postman 测试登录，拿到 token。
+
+> **完成标志**：员工用 INV001/123456 能登录并返回 token。
+
+---
+
+### 阶段 4：业务路由开发（后端主体）
+**目标**：按模块开发所有 RESTful API。
+
+推荐顺序（从简单到复杂）：
+
+| 顺序 | 模块 | 关键接口 | 涉及角色 |
+|------|------|----------|----------|
+| 1 | 商铺 | `GET /api/shop/list`、`GET /api/shop/{id}` | 全部 |
+| 2 | 租户 | `GET /api/tenant/list`、`POST /api/tenant/add` | 招商 |
+| 3 | 合同 | `GET /api/contract/list`、`POST /api/contract/add`、`PUT /api/contract/audit/{id}` | 招商、财务 |
+| 4 | 租金 | `GET /api/rent/list`、`POST /api/rent/add`、`PUT /api/rent/update` | 招商、营运 |
+| 5 | 收款单 | `GET /api/receipt/list`、`PUT /api/receipt/remind/{id}` | 收银 |
+| 6 | 账单 | `GET /api/bill/list`、`POST /api/bill/pay/{id}` | 商户 |
+| 7 | 员工注册 | `POST /api/employee/register` | 老板 |
+
+每个模块的编写套路：
+1. 在 `schemas/` 中定义 Pydantic 请求模型。
+2. 在 `routers/` 中编写路由函数。
+3. 用 `Depends(require_role(...))` 加权限。
+4. 用 Postman 逐个测试。
+
+> **完成标志**：所有接口在 Swagger 中可调用，权限校验正常。
+
+---
+
+### 阶段 5：定时任务与业务闭环（后端收尾）
+**目标**：让系统具备自动化和数据联动。
+
+1. 在 `scheduler/monthly_receipt.py` 中实现每月1号生成收款单/账单：
+   ```python
+   from apscheduler.schedulers.background import BackgroundScheduler
+   scheduler = BackgroundScheduler()
+   scheduler.add_job(generate_monthly_receipts, 'cron', day=1, hour=2)
+   scheduler.start()
+   ```
+2. 在 `main.py` 中启动 scheduler。
+3. 测试：手动调用或临时把 cron 改为每分钟，验证账单生成。
+
+> **完成标志**：审核通过的合同能自动生成账单。
+
+---
+
+### 阶段 6：前端开发（VSCode）
+**目标**：让用户能通过浏览器操作所有功能。
+
+推荐顺序（与后端模块对应）：
+
+1. **`index.html` 登录页**
+   - 三个 Tab：员工 / 商户 / 老板
+   - 调用 `/api/auth/*/login`，存储 token 和 role
+2. **`pages/register.html` 商户注册**
+   - 调用 `/api/auth/merchant/register`
+3. **`pages/employee.html` 员工工作台**
+   - 根据 role 动态渲染左侧菜单
+   - 每个菜单项对应一个 `v-if` 模块（租户列表、合同列表、审核按钮等）
+4. **`pages/merchant.html` 商户工作台**
+   - 展示账单列表，提供缴费按钮
+5. **`pages/boss.html` 老板工作台**
+   - 商铺信息只读表格 + 员工注册表单
+6. **`static/js/api.js` 统一封装 axios**
+   - 请求拦截器：自动加 `Authorization: Bearer <token>`
+   - 响应拦截器：401 自动跳登录
+
+> **完成标志**：浏览器中能完成"登录 → 查看数据 → 操作 → 退出"完整流程。
+
+---
+
+## 四、推荐开发节奏（时间分配参考）
+
+| 阶段 | 内容 | 建议耗时 |
+|------|------|----------|
+| 1 | 数据库建表 + 初始化 | 1 天 |
+| 2 | 后端骨架 + 数据库连通 | 1 天 |
+| 3 | 认证与权限 | 2 天 |
+| 4 | 业务路由（7 个模块） | 5 天 |
+| 5 | 定时任务 + 业务闭环 | 1 天 |
+| 6 | 前端页面（5 个页面） | 3 天 |
+| 7 | 联调 + 测试 + 修 bug | 2 天 |
+| **合计** | | **约 15 天** |
+
+---
+
+## 五、启动方式速查
+
+**后端（PyCharm）**：
+```bash
+cd backend
+python run.py
+# 访问 http://localhost:8000/docs
+```
+
+**前端（VSCode）**：
+```bash
+# 方法一：Live Server 插件右键 index.html
+# 方法二：Python 自带服务
+cd frontend
+python -m http.server 5500
+# 访问 http://localhost:5500
+```
+
+**数据库（DataGrip）**：
+- 连接 `localhost:3306`，库名 `shop_db`
+
+---
+
+## 六、关键约定
+
+1. **RESTful 风格**：`GET` 查询、`POST` 新增、`PUT` 更新、`DELETE` 删除。
+2. **统一前缀**：所有接口以 `/api` 开头。
+3. **统一认证**：除了登录/注册，所有请求头需带 `Authorization: Bearer <token>`。
+4. **哈希表存密钥**：`SESSION_TABLE` 存 token 会话，`BOSS_CREDENTIALS` 存老板账号（简单方案，重启会清空）。
+5. **角色隔离**：后端用 `require_role()` 校验，前端用 `role` 控制菜单显示。
+
+按此顺序推进，可以保证每一步都有可运行的成果，避免"全写完才发现跑不起来"的问题。如需某个模块的具体代码实现（如合同审核、账单生成），可以继续告诉我。
+
+五、完整测试账号汇总
+初始化完成后，系统应有以下测试账号：
+
+角色 用户名   密码 说明
+老板 boss  123456   老板登录
+招商 INV001   123456   员工登录
+财务 FIN001   123456   员工登录
+营运 OPE001   123456   员工登录
+收银 CAS001   123456   员工登录
+商户 zhangsan 123456   商户登录

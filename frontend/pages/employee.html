@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <title>员工工作台</title>
+  <link rel="stylesheet" href="../static/css/common.css">
+  <link rel="stylesheet" href="../static/css/dashboard.css">
+  <link rel="stylesheet" href="../static/css/table.css">
+</head>
+
+<body>
+  <div class="dashboard" id="app">
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        商铺管理系统
+        <span class="role">{{ roleName }}</span>
+      </div>
+      <ul class="sidebar-menu">
+        <li v-for="m in menus" :key="m.key" :class="{ active: view === m.key }" @click="view = m.key">{{ m.label }}</li>
+      </ul>
+      <div class="sidebar-footer">
+        <button @click="logout">退出登录</button>
+      </div>
+    </aside>
+
+    <!-- 主内容 -->
+    <main class="main">
+      <div class="topbar">
+        <h2>{{ currentTitle }}</h2>
+        <div class="user-info">当前用户：{{ username }}</div>
+      </div>
+
+      <div class="content">
+        <!-- 租户管理 -->
+        <div v-if="view === 'tenant'">
+          <div class="page-header">
+            <h3>租户列表</h3>
+            <div class="actions">
+              <button class="btn btn-primary" @click="showTenantModal = true">新增租户</button>
+              <button class="btn" @click="loadTenants">刷新</button>
+            </div>
+          </div>
+          <table class="data-table" v-if="tenants.length">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>名称</th>
+                <th>身份证</th>
+                <th>品牌类型</th>
+                <th>品牌名</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="t in tenants" :key="t.id">
+                <td>{{ t.id }}</td>
+                <td>{{ t.name }}</td>
+                <td>{{ t.idCard }}</td>
+                <td>{{ t.brandType }}</td>
+                <td>{{ t.brandName || '-' }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div v-else class="empty">暂无数据</div>
+        </div>
+
+        <!-- 合同管理 -->
+        <div v-if="view === 'contract'">
+          <div class="page-header">
+            <h3>合同列表</h3>
+            <button class="btn" @click="loadContracts">刷新</button>
+          </div>
+          <table class="data-table" v-if="contracts.length">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>合同号</th>
+                <th>商铺</th>
+                <th>租户</th>
+                <th>开始</th>
+                <th>结束</th>
+                <th>状态</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="c in contracts" :key="c.id">
+                <td>{{ c.id }}</td>
+                <td>{{ c.contractNo }}</td>
+                <td>{{ c.shopId }}</td>
+                <td>{{ c.tenantId }}</td>
+                <td>{{ c.startDate }}</td>
+                <td>{{ c.endDate }}</td>
+                <td>
+                  <span class="tag" :class="auditTag(c.auditStatus)">
+                    {{ auditText(c.auditStatus) }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div v-else class="empty">暂无数据</div>
+        </div>
+
+        <!-- 租金管理 -->
+        <div v-if="view === 'rent'">
+          <div class="page-header">
+            <h3>租金列表</h3>
+            <button class="btn" @click="loadRents">刷新</button>
+          </div>
+          <table class="data-table" v-if="rents.length">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>租户</th>
+                <th>商铺</th>
+                <th>类型</th>
+                <th>周期</th>
+                <th>固定租金</th>
+                <th>抽成租金</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="r in rents" :key="r.id">
+                <td>{{ r.id }}</td>
+                <td>{{ r.tenantId }}</td>
+                <td>{{ r.shopId }}</td>
+                <td>{{ r.rentType === 'fixed' ? '固定' : '抽成' }}</td>
+                <td>{{ r.billingCycle }}</td>
+                <td>{{ r.rentAmountFixed || '-' }}</td>
+                <td>{{ r.rentAmountPercent || '-' }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div v-else class="empty">暂无数据</div>
+        </div>
+
+        <!-- 合同审核（财务） -->
+        <div v-if="view === 'audit'">
+          <div class="page-header">
+            <h3>合同审核</h3>
+            <button class="btn" @click="loadContracts">刷新</button>
+          </div>
+          <table class="data-table" v-if="contracts.length">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>合同号</th>
+                <th>商铺</th>
+                <th>租户</th>
+                <th>状态</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="c in contracts" :key="c.id">
+                <td>{{ c.id }}</td>
+                <td>{{ c.contractNo }}</td>
+                <td>{{ c.shopId }}</td>
+                <td>{{ c.tenantId }}</td>
+                <td>
+                  <span class="tag" :class="auditTag(c.auditStatus)">
+                    {{ auditText(c.auditStatus) }}
+                  </span>
+                </td>
+                <td v-if="c.auditStatus === 0">
+                  <button class="btn btn-success btn-sm" @click="audit(c.id, true)">通过</button>
+                  <button class="btn btn-danger btn-sm" style="margin-left:6px" @click="audit(c.id, false)">不通过</button>
+                </td>
+                <td v-else>-</td>
+              </tr>
+            </tbody>
+          </table>
+          <div v-else class="empty">暂无数据</div>
+        </div>
+
+        <!-- 租金修改（营运） -->
+        <div v-if="view === 'rentUpdate'">
+          <div class="page-header">
+            <h3>租金修改</h3>
+            <button class="btn" @click="loadRents">刷新</button>
+          </div>
+          <table class="data-table" v-if="rents.length">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>租户</th>
+                <th>商铺</th>
+                <th>类型</th>
+                <th>单价/抽成比</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="r in rents" :key="r.id">
+                <td>{{ r.id }}</td>
+                <td>{{ r.tenantId }}</td>
+                <td>{{ r.shopId }}</td>
+                <td>{{ r.rentType === 'fixed' ? '固定' : '抽成' }}</td>
+                <td>
+                  <span v-if="r.rentType === 'fixed'">{{ r.unitPrice }} 元/平米</span>
+                  <span v-else>{{ r.percentRate }}%</span>
+                </td>
+                <td>
+                  <button class="btn btn-primary btn-sm" @click="editRent(r)">编辑</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div v-else class="empty">暂无数据</div>
+        </div>
+
+        <!-- 商铺退租（营运） -->
+        <div v-if="view === 'shopExit'">
+          <div class="page-header">
+            <h3>商铺退租</h3>
+            <button class="btn" @click="loadRentedShops">刷新</button>
+          </div>
+          <table class="data-table" v-if="rentedShops.length">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>铺位号</th>
+                <th>楼层</th>
+                <th>建筑面积</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="s in rentedShops" :key="s.id">
+                <td>{{ s.id }}</td>
+                <td>{{ s.shopNumber }}</td>
+                <td>{{ s.floor }}</td>
+                <td>{{ s.buildingArea }}</td>
+                <td>
+                  <button class="btn btn-danger btn-sm" @click="exitShop(s)">退租</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div v-else class="empty">暂无已出租商铺</div>
+        </div>
+
+        <!-- 收款单（收银） -->
+        <div v-if="view === 'receipt'">
+          <div class="page-header">
+            <h3>收款单管理</h3>
+            <button class="btn" @click="loadReceipts">刷新</button>
+          </div>
+          <table class="data-table" v-if="receipts.length">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>租户</th>
+                <th>收款时间</th>
+                <th>应收</th>
+                <th>实收</th>
+                <th>欠收</th>
+                <th>催收</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="r in receipts" :key="r.id">
+                <td>{{ r.id }}</td>
+                <td>{{ r.tenantId }}</td>
+                <td>{{ r.receiptTime }}</td>
+                <td>{{ r.receivableAmount }}</td>
+                <td>{{ r.paidAmount }}</td>
+                <td>{{ r.unpaidAmount }}</td>
+                <td>
+                  <span class="tag" :class="r.reminderSent ? 'tag-success' : 'tag-warning'">
+                    {{ r.reminderSent ? '已催收' : '未催收' }}
+                  </span>
+                </td>
+                <td>
+                  <button class="btn btn-warning btn-sm" :disabled="r.reminderSent === 1"
+                    @click="remind(r.id)">催收</button>
+                  <button class="btn btn-primary btn-sm" style="margin-left:6px" @click="editPaid(r)">改实收</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div v-else class="empty">暂无数据</div>
+        </div>
+      </div>
+    </main>
+
+    <!-- 新增租户弹窗 -->
+    <div class="modal-mask" v-if="showTenantModal">
+      <div class="modal">
+        <div class="modal-header">新增租户</div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>租户名称</label>
+            <input class="form-control" v-model="tenantForm.name">
+          </div>
+          <div class="form-group">
+            <label>身份证号</label>
+            <input class="form-control" v-model="tenantForm.idCard" maxlength="18">
+          </div>
+          <div class="form-group">
+            <label>品牌类型</label>
+            <select class="form-control" v-model="tenantForm.brandType">
+              <option value="连锁">连锁</option>
+              <option value="个体">个体</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>品牌名称</label>
+            <input class="form-control" v-model="tenantForm.brandName">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" @click="showTenantModal = false">取消</button>
+          <button class="btn btn-primary" @click="submitTenant">确定</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 修改租金弹窗 -->
+    <div class="modal-mask" v-if="showRentModal">
+      <div class="modal">
+        <div class="modal-header">修改租金</div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>租金 ID</label>
+            <input class="form-control" :value="rentForm.id" disabled>
+          </div>
+          <div class="form-group" v-if="rentForm.rentType === 'fixed'">
+            <label>单价（元/平米）</label>
+            <input class="form-control" type="number" v-model.number="rentForm.unitPrice">
+          </div>
+          <div class="form-group" v-else>
+            <label>抽成比（%）</label>
+            <input class="form-control" type="number" v-model.number="rentForm.percentRate">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" @click="showRentModal = false">取消</button>
+          <button class="btn btn-primary" @click="submitRent">确定</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 修改实收弹窗 -->
+    <div class="modal-mask" v-if="showPaidModal">
+      <div class="modal">
+        <div class="modal-header">修改实收金额</div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>收款单 ID</label>
+            <input class="form-control" :value="paidForm.id" disabled>
+          </div>
+          <div class="form-group">
+            <label>新实收金额</label>
+            <input class="form-control" type="number" v-model.number="paidForm.amount">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" @click="showPaidModal = false">取消</button>
+          <button class="btn btn-primary" @click="submitPaid">确定</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script src="../static/js/api.js"></script>
+  <script src="../static/js/employee.js"></script>
+</body>
+
+</html>

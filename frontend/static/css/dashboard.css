@@ -1,0 +1,133 @@
+/* ========== 工作台布局 ========== */
+.dashboard {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* 侧边栏 */
+.sidebar {
+  width: 220px;
+  background: var(--primary);
+  color: var(--white);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.sidebar-brand {
+  padding: 22px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  letter-spacing: 0.5px;
+}
+
+.sidebar-brand .role {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 4px;
+}
+
+.sidebar-menu {
+  flex: 1;
+  padding: 12px 0;
+  list-style: none;
+}
+
+.sidebar-menu li {
+  padding: 11px 20px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: all 0.2s;
+  border-left: 3px solid transparent;
+}
+
+.sidebar-menu li:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--white);
+}
+
+.sidebar-menu li.active {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--white);
+  border-left-color: var(--accent);
+  font-weight: 500;
+}
+
+.sidebar-footer {
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-footer button {
+  width: 100%;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--white);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.2s;
+}
+
+.sidebar-footer button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* 主内容区 */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.topbar {
+  height: 60px;
+  background: var(--white);
+  border-bottom: 1px solid var(--gray-200);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  box-shadow: var(--shadow-sm);
+}
+
+.topbar h2 {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.topbar .user-info {
+  font-size: 13px;
+  color: var(--gray-600);
+}
+
+.content {
+  flex: 1;
+  padding: 24px 28px;
+  overflow: auto;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.page-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}

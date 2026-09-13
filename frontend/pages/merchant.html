@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <title>商户工作台</title>
+  <link rel="stylesheet" href="../static/css/common.css">
+  <link rel="stylesheet" href="../static/css/dashboard.css">
+  <link rel="stylesheet" href="../static/css/table.css">
+</head>
+
+<body>
+  <div class="dashboard" id="app">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        商户中心
+        <span class="role">{{ username }}</span>
+      </div>
+      <ul class="sidebar-menu">
+        <li :class="{ active: view === 'bill' }" @click="view = 'bill'">我的账单</li>
+      </ul>
+      <div class="sidebar-footer">
+        <button @click="logout">退出登录</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <h2>账单与缴费</h2>
+        <div class="user-info">当前用户：{{ username }}</div>
+      </div>
+
+      <div class="content">
+        <div class="page-header">
+          <h3>账单列表</h3>
+          <button class="btn" @click="loadBills">刷新</button>
+        </div>
+
+        <table class="data-table" v-if="bills.length">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>账单月份</th>
+              <th>应收金额</th>
+              <th>实收金额</th>
+              <th>欠收金额</th>
+              <th>状态</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="b in bills" :key="b.id">
+              <td>{{ b.id }}</td>
+              <td>{{ b.billMonth }}</td>
+              <td>{{ b.receivableAmount }}</td>
+              <td>{{ b.paidAmount }}</td>
+              <td>{{ b.unpaidAmount }}</td>
+              <td>
+                <span class="tag" :class="b.isPaid ? 'tag-success' : 'tag-danger'">
+                  {{ b.isPaid ? '已结清' : '未结清' }}
+                </span>
+              </td>
+              <td>
+                <button class="btn btn-primary btn-sm" :disabled="b.isPaid === 1" @click="openPay(b)">缴费</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div v-else class="empty">暂无账单</div>
+      </div>
+    </main>
+
+    <!-- 缴费弹窗 -->
+    <div class="modal-mask" v-if="showPayModal">
+      <div class="modal">
+        <div class="modal-header">缴费</div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>账单 ID</label>
+            <input class="form-control" :value="payForm.billId" disabled>
+          </div>
+          <div class="form-group">
+            <label>应收金额</label>
+            <input class="form-control" :value="payForm.receivable" disabled>
+          </div>
+          <div class="form-group">
+            <label>缴费金额</label>
+            <input class="form-control" type="number" v-model.number="payForm.amount">
+          </div>
+          <div class="form-group">
+            <label>支付渠道</label>
+            <select class="form-control" v-model="payForm.channel">
+              <option value="wechat">微信支付</option>
+              <option value="alipay">支付宝</option>
+              <option value="bank">银行转账</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" @click="showPayModal = false">取消</button>
+          <button class="btn btn-primary" @click="submitPay">确认缴费</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script src="../static/js/api.js"></script>
+  <script src="../static/js/merchant.js"></script>
+</body>
+
+</html>

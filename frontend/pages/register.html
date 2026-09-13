@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <title>商户注册</title>
+  <link rel="stylesheet" href="../static/css/common.css">
+  <link rel="stylesheet" href="../static/css/login.css">
+</head>
+
+<body>
+  <div class="register-page" id="app">
+    <div class="register-card">
+      <h1>商户注册</h1>
+      <div class="form-group">
+        <label>登录用户名 *</label>
+        <input class="form-control" v-model="form.username" placeholder="至少3个字符">
+      </div>
+      <div class="form-group">
+        <label>密码 *</label>
+        <input class="form-control" type="password" v-model="form.password" placeholder="至少6位">
+      </div>
+      <div class="form-group">
+        <label>确认密码 *</label>
+        <input class="form-control" type="password" v-model="form.confirmPassword">
+      </div>
+      <div class="form-group">
+        <label>租户名称 *</label>
+        <input class="form-control" v-model="form.tenantName" placeholder="经营者姓名">
+      </div>
+      <div class="form-group">
+        <label>身份证号 *</label>
+        <input class="form-control" v-model="form.idCard" maxlength="18" placeholder="18位身份证">
+      </div>
+      <div class="form-group">
+        <label>品牌类型 *</label>
+        <select class="form-control" v-model="form.brandType">
+          <option value="">请选择</option>
+          <option value="连锁">连锁</option>
+          <option value="个体">个体</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>品牌名称</label>
+        <input class="form-control" v-model="form.brandName" placeholder="选填">
+      </div>
+      <button class="btn btn-primary" style="width:100%;padding:11px;margin-top:8px" :disabled="loading"
+        @click="handleRegister">
+        {{ loading ? '提交中...' : '注 册' }}
+      </button>
+      <div class="register-link">
+        已有账号？<a href="../index.html">返回登录</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script src="../static/js/api.js"></script>
+  <script src="../static/js/register.js"></script>
+</body>
+
+</html>

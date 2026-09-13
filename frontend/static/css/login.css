@@ -1,0 +1,130 @@
+/* ========== 登录页 ========== */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 50%, #3182ce 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 背景装饰 */
+.login-page::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 700px;
+  height: 700px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.login-page::after {
+  content: "";
+  position: absolute;
+  bottom: -30%;
+  left: -10%;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.login-card {
+  position: relative;
+  width: 420px;
+  background: var(--white);
+  border-radius: 12px;
+  padding: 40px 36px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  z-index: 1;
+}
+
+.login-card h1 {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--primary);
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.login-card .subtitle {
+  text-align: center;
+  font-size: 13px;
+  color: var(--gray-600);
+  margin-bottom: 28px;
+}
+
+/* 选项卡 */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--gray-200);
+  margin-bottom: 24px;
+}
+
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 10px 0;
+  font-size: 14px;
+  color: var(--gray-600);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  color: var(--primary);
+}
+
+.tab.active {
+  color: var(--primary);
+  font-weight: 600;
+  border-bottom-color: var(--primary);
+}
+
+.tab-content {
+  min-height: 200px;
+}
+
+.login-card .btn-primary {
+  width: 100%;
+  padding: 11px;
+  font-size: 15px;
+  margin-top: 8px;
+}
+
+.register-link {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 13px;
+  color: var(--gray-600);
+}
+
+/* ========== 注册页 ========== */
+.register-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  padding: 40px 20px;
+}
+
+.register-card {
+  width: 520px;
+  background: var(--white);
+  border-radius: 12px;
+  padding: 36px 40px;
+  box-shadow: var(--shadow-lg);
+}
+
+.register-card h1 {
+  font-size: 20px;
+  color: var(--primary);
+  text-align: center;
+  margin-bottom: 28px;
+}
